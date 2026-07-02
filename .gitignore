@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+
+# Local results & engagement data (may contain client data)
+*_results*.json
+sweep_*.json
+client_*.json
+
+# Build / QA artifacts
+_qa/
+*.pdf
+slide-*.jpg
+fix-*.jpg
+s2-*.jpg
+
+# OS files
+.DS_Store
+Thumbs.db

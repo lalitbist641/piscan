@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "piscan"
+version = "0.1.0"
+description = "Prompt Injection Scanner — a CLI to test LLM chatbots for prompt-injection vulnerabilities"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Lalit Bist", email = "lalitbist.edu@gmail.com" }]
+keywords = ["prompt-injection", "llm", "security", "red-team", "chatbot", "ai-security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+
+# Core dependencies — enough for `probe`, `judge`, and the target adapter.
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "httpx>=0.27.0",
+    "requests>=2.32.0",
+    "beautifulsoup4>=4.12.0",
+    "openai>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Layer-2 semantic detection (pulls in torch — heavy).
+semantic = ["sentence-transformers>=2.2.0"]
+# JavaScript-aware endpoint discovery for `discover`.
+crawl = ["playwright>=1.40.0"]
+# Everything.
+all = ["sentence-transformers>=2.2.0", "playwright>=1.40.0"]
+dev = ["pytest>=7.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/lalitbist641/piscan"
+Repository = "https://github.com/lalitbist641/piscan"
+Issues = "https://github.com/lalitbist641/piscan/issues"
+
+[project.scripts]
+piscan = "piscan.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["piscan*"]

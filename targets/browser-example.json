@@ -1,0 +1,11 @@
+{
+  "url": "https://client-website.com",
+  "preset": "generic",
+  "open_selector": "#chat-launcher, [aria-label*='chat' i]",
+  "iframe_selector": "",
+  "input_selector": "textarea, input[type=text], [contenteditable=true]",
+  "send_selector": "button[type=submit], [aria-label*='send' i]",
+  "message_selector": "[class*=message], [class*=bubble]",
+  "wait_ms": 4000,
+  "rate_limit_ms": 2000
+}

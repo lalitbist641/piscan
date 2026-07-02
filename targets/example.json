@@ -1,0 +1,16 @@
+{
+  "name": "example-client",
+  "url": "https://api.example-client.com/v1/chat",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer ${EXAMPLE_TOKEN}",
+    "Content-Type": "application/json"
+  },
+  "body_template": {
+    "message": "{{PAYLOAD}}",
+    "session_id": "piscan-security-test"
+  },
+  "response_path": "reply.text",
+  "rate_limit_ms": 1000,
+  "timeout_s": 30
+}
