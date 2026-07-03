@@ -315,7 +315,26 @@ def probe_site(
         note = "ok" if r["success"] else r["detection_reason"][:45]
         console.print(f"  {mark} {r['payload_id']}: {note}")
 
-    results = prober.probe(payloads, progress=_tick)
+    try:
+        from piscan.browser import ChatWidgetNotFound
+        results = prober.probe(payloads, progress=_tick)
+    except ChatWidgetNotFound as e:
+        console.print(f"\n[red]✗ No chatbot reached.[/red] {e}")
+        console.print("[yellow]No results were recorded — the scanner never found a chat box to attack.[/yellow]")
+        raise typer.Exit(1)
+
+    # Sanity check: if every captured reply is empty or identical, we almost
+    # certainly scraped a stray page element rather than talking to a chatbot.
+    succ = [r for r in results if r["success"]]
+    distinct = {r["response_text"].strip() for r in succ if r["response_text"].strip()}
+    if succ and len(distinct) <= 1:
+        console.print(
+            "\n[yellow]⚠ Warning: all captured replies were empty or identical.[/yellow]\n"
+            "[yellow]The scanner most likely did NOT reach a real chatbot (it read a static "
+            "page element). A 0% result here means 'nothing happened', not 'the bot is secure'.\n"
+            "Re-run with --headful and watch: does a chat widget open, and are your payloads "
+            "typed into it? If not, this page may have no chatbot or needs custom selectors "
+            "(see TESTING_REAL_CHATBOTS.md).[/yellow]")
 
     if judge:
         _run_judge(results, [p for p in payloads if p.get("category") != "benign"],

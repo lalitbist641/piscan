@@ -18,6 +18,11 @@ from typing import Dict, List, Optional
 from piscan.detector import Detector
 
 
+class ChatWidgetNotFound(Exception):
+    """Raised when no chat input can be located on the page."""
+    pass
+
+
 # Built-in selector presets for common chat widgets. `iframe_selector` is the
 # frame the widget renders in (many vendors use an iframe); leave empty if the
 # widget is inline in the page.
@@ -131,6 +136,22 @@ class BrowserProber:
             page.wait_for_timeout(1500)
             self._open_widget(page)
             scope = self._scope(page)
+
+            # Fail loudly if there is no chat input to type into, instead of
+            # silently "succeeding" against stray page elements.
+            try:
+                input_count = scope.locator(self.cfg["input_selector"]).count()
+            except Exception:
+                input_count = 0
+            if input_count == 0:
+                browser.close()
+                raise ChatWidgetNotFound(
+                    f"No chat input matched selector '{self.cfg['input_selector']}' "
+                    f"on {self.url}. Likely causes: the page has no chatbot, the "
+                    f"widget didn't open, it lives in an iframe, or it needs custom "
+                    f"selectors. Re-run with --headful to watch, and see "
+                    f"TESTING_REAL_CHATBOTS.md to build a target profile."
+                )
 
             for payload in payloads:
                 start = time.time()
