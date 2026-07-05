@@ -111,16 +111,42 @@ class BrowserProber:
         except Exception:
             pass  # widget may already be open / no launcher
 
-    def _read_reply(self, scope, prev_count: int) -> str:
-        """Return the newest bot message text after sending a payload."""
+    def _msg_count(self, scope) -> int:
         try:
-            msgs = scope.locator(self.cfg["message_selector"])
-            n = msgs.count()
-            if n == 0:
-                return ""
-            # take the last message; ignore if no new message appeared
-            texts = msgs.all_inner_texts()
-            return texts[-1].strip() if texts else ""
+            return scope.locator(self.cfg["message_selector"]).count()
+        except Exception:
+            return 0
+
+    def _wait_new_reply(self, page, scope, prev_count: int, sent_text: str) -> str:
+        """Wait for a NEW message bubble to appear, then return its text.
+
+        Polls until the message count grows past `prev_count`, so we read the
+        actual reply to THIS payload rather than a stale earlier bubble. Skips
+        the user's own echoed message when the selector matches both sides.
+        """
+        loc = scope.locator(self.cfg["message_selector"])
+        sent = (sent_text or "").strip()
+        deadline = time.time() + max(self.wait_ms / 1000.0, 2.0)
+        while time.time() < deadline:
+            try:
+                n = loc.count()
+            except Exception:
+                n = prev_count
+            if n > prev_count:
+                try:
+                    texts = loc.all_inner_texts()
+                    newest = texts[-1].strip() if texts else ""
+                except Exception:
+                    newest = ""
+                # ignore our own message echoed back into the log
+                if newest and newest != sent:
+                    return newest
+            page.wait_for_timeout(200)
+        # timed out — best-effort read of the newest, if it isn't our echo
+        try:
+            texts = loc.all_inner_texts()
+            newest = texts[-1].strip() if texts else ""
+            return newest if newest != sent else ""
         except Exception:
             return ""
 
@@ -171,6 +197,7 @@ class BrowserProber:
                 category = payload.get("category", "direct")
                 reply, ok, err = "", True, None
                 try:
+                    prev_count = self._msg_count(scope)
                     inp = scope.locator(self.cfg["input_selector"]).first
                     inp.click(timeout=8000)
                     inp.fill(payload["text"])
@@ -179,10 +206,10 @@ class BrowserProber:
                         scope.locator(send).first.click(timeout=5000)
                     else:
                         inp.press("Enter")
-                    page.wait_for_timeout(self.wait_ms)
-                    reply = self._read_reply(scope, 0)
+                    # wait for a NEW reply bubble rather than a fixed pause
+                    reply = self._wait_new_reply(page, scope, prev_count, payload["text"])
                     if not reply:
-                        ok, err = False, "no reply captured (check selectors)"
+                        ok, err = False, "no new reply captured (check selectors/timing)"
                 except Exception as e:
                     ok, err = False, str(e)[:200]
 
