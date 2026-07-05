@@ -70,7 +70,7 @@ class BrowserProber:
     def __init__(self, url: str, profile: Optional[Dict] = None,
                  preset: str = "generic", headful: bool = False,
                  wait_ms: int = 4000, rate_limit_ms: int = 1500,
-                 open_wait_ms: int = 2500):
+                 open_wait_ms: int = 2500, load_wait_s: int = 15):
         self.url = url
         # Start from a preset, override with any explicit profile keys.
         cfg = dict(WIDGET_PRESETS.get(preset, WIDGET_PRESETS["generic"]))
@@ -86,6 +86,7 @@ class BrowserProber:
         self.wait_ms = wait_ms
         self.rate_limit_ms = rate_limit_ms
         self.open_wait_ms = open_wait_ms
+        self.load_wait_s = int(profile.get("load_wait_s", load_wait_s)) if profile else load_wait_s
         self.detector = Detector()
 
     def _scope(self, page):
@@ -137,18 +138,30 @@ class BrowserProber:
             self._open_widget(page)
             scope = self._scope(page)
 
-            # Fail loudly if there is no chat input to type into, instead of
-            # silently "succeeding" against stray page elements.
-            try:
-                input_count = scope.locator(self.cfg["input_selector"]).count()
-            except Exception:
-                input_count = 0
+            # Wait for the chat input to actually render — JS apps (React, etc.)
+            # often add it a few seconds after the page loads. Poll instead of
+            # failing on the first check.
+            input_sel = self.cfg["input_selector"]
+            input_count = 0
+            deadline = time.time() + self.load_wait_s
+            while time.time() < deadline:
+                try:
+                    input_count = scope.locator(input_sel).count()
+                except Exception:
+                    input_count = 0
+                if input_count > 0:
+                    break
+                # a launcher may need clicking again once JS has loaded
+                self._open_widget(page)
+                page.wait_for_timeout(1000)
+
             if input_count == 0:
                 browser.close()
                 raise ChatWidgetNotFound(
-                    f"No chat input matched selector '{self.cfg['input_selector']}' "
-                    f"on {self.url}. Likely causes: the page has no chatbot, the "
-                    f"widget didn't open, it lives in an iframe, or it needs custom "
+                    f"No chat input matched selector '{input_sel}' on {self.url} "
+                    f"after waiting {self.load_wait_s}s. Likely causes: the page has "
+                    f"no chatbot, the widget didn't open, it lives in an iframe, a "
+                    f"cookie/consent banner is blocking it, or it needs custom "
                     f"selectors. Re-run with --headful to watch, and see "
                     f"TESTING_REAL_CHATBOTS.md to build a target profile."
                 )

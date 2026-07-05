@@ -63,6 +63,35 @@ piscan probe http://localhost:11434/api/chat \
     --output results.json
 ```
 
+## Try it: safe local demo (no target needed)
+
+The repo ships a deliberately-vulnerable chatbot so you can watch the full browser pipeline work end to end — legally, on your own machine. Install the browser extra, start the demo bot, and scan it:
+
+```bash
+pip install -e ".[crawl]" && playwright install chromium
+
+# terminal 1 — start the vulnerable demo chatbot
+python demo/vulnerable_chatbot.py
+
+# terminal 2 — attack it (browser opens so you can watch)
+piscan probe-site http://localhost:8000 --profile targets/local-demo.json --benign --headful
+```
+
+Example result:
+
+```
+Attack detection by category
+  direct       80.0%  (12/15)
+  indirect     33.3%  (4/12)
+  role         58.3%  (7/12)
+  encoding     25.0%  (3/12)
+  extraction   60.0%  (6/10)
+  overall      52.5%  (32/61)
+Benign false-positive rate: 0.0% (0/15)
+```
+
+The attacks land against the weak bot while the benign controls stay clean. See [demo/README.md](demo/README.md) for details. This is also how you learn to write a [browser profile](targets/local-demo.json) (the CSS selectors) — the exact skill you need for any real, **authorized** target.
+
 ## Commands
 
 | Command | Description |
