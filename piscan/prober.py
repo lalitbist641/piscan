@@ -8,12 +8,23 @@ from piscan.detector import Detector
 
 class Prober:
     def __init__(self, concurrent: int = 3, model: str = "llama3.2",
-                 profile=None):
+                 profile=None, retries: int = 1):
         self.concurrent = concurrent
         self.model = model
         self.profile = profile          # optional TargetProfile for real chatbots
+        self.retries = retries          # retry failed requests this many times
         self.results = []
         self.detector = Detector()
+
+    async def send_with_retry(self, client, endpoint, payload, run=0):
+        """Send a payload, retrying on failure (transient errors / timeouts)."""
+        res = None
+        for attempt in range(self.retries + 1):
+            res = await self.send_payload(client, endpoint, payload, run)
+            if res.get("success") or attempt >= self.retries:
+                return res
+            await asyncio.sleep(0.5)
+        return res
 
     async def send_payload(self, client: httpx.AsyncClient, endpoint: str,
                            payload: Dict, run: int = 0) -> Dict:
@@ -102,7 +113,7 @@ class Prober:
 
             async def limited_send(payload, run):
                 async with semaphore:
-                    return await self.send_payload(client, endpoint, payload, run)
+                    return await self.send_with_retry(client, endpoint, payload, run)
 
             tasks = [limited_send(p, r) for r in range(repeat) for p in payloads]
             self.results = await asyncio.gather(*tasks)

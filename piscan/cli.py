@@ -156,11 +156,13 @@ def probe(
     repeat: int = 1,
     benign: bool = False,
     profile: str = None,
+    limit: int = 0,
+    report: str = None,
     judge: bool = False,
     judge_model: str = "gpt-4o",
     judge_backend: str = "openai",
 ):
-    """Send all payloads to an endpoint. --profile FILE targets a real chatbot API via a config file; --model sets a local Ollama model; --repeat N averages over N runs; --benign adds false-positive controls; --judge adds ground-truth labels (--judge-backend ollama for a free local judge)."""
+    """Send all payloads to an endpoint. --profile FILE targets a real chatbot API via a config file; --model sets a local Ollama model; --repeat N averages over N runs; --benign adds false-positive controls; --limit N sends only the first N payloads (quick smoke test); --report FILE writes an HTML findings report; --judge adds ground-truth labels (--judge-backend ollama for a free local judge)."""
     target_profile = None
     if profile:
         from piscan.target import TargetProfile
@@ -183,8 +185,11 @@ def probe(
         b = load_payloads("benign")
         n_benign = len(b)
         payloads = payloads + b
-    console.print(f"[dim]Payloads: {len(payloads) - n_benign} attack"
-                  + (f" + {n_benign} benign" if benign else "")
+    if limit and limit > 0:
+        payloads = payloads[:limit]
+        console.print(f"[yellow]--limit {limit}: sending only the first {len(payloads)} payloads (smoke test)[/yellow]")
+    console.print(f"[dim]Payloads: {len([p for p in payloads if p.get('category') != 'benign'])} attack"
+                  + (f" + {len([p for p in payloads if p.get('category') == 'benign'])} benign" if benign else "")
                   + f"  ·  Total requests: {len(payloads) * repeat}[/dim]")
 
     prober = Prober(concurrent=concurrent, model=model, profile=target_profile)
@@ -237,6 +242,11 @@ def probe(
             json.dump(results, f, indent=2)
         console.print(f"\n[green]Raw results ({len(results)}) saved to {output}[/green]")
 
+    if report:
+        from piscan.report import generate_html
+        generate_html(results, report, meta={"target": endpoint, "model": model})
+        console.print(f"[green]HTML report written to {report}[/green]")
+
 
 def _report_summary(results):
     """Print per-category detection rates + benign false-positive rate."""
@@ -271,7 +281,9 @@ def probe_site(
     headful: bool = False,
     benign: bool = False,
     wait_ms: int = 4000,
+    limit: int = 0,
     output: str = None,
+    report: str = None,
     judge: bool = False,
     judge_model: str = "gpt-4o",
     judge_backend: str = "openai",
@@ -302,6 +314,9 @@ def probe_site(
     payloads = [p for p in load_payloads() if p.get("category") != "benign"]
     if benign:
         payloads += load_payloads("benign")
+    if limit and limit > 0:
+        payloads = payloads[:limit]
+        console.print(f"[yellow]--limit {limit}: sending only the first {len(payloads)} payloads (smoke test)[/yellow]")
 
     console.print(f"[bold]Browser-probing:[/bold] {url}  [dim](preset: {preset})[/dim]")
     console.print(f"[dim]{len(payloads)} payloads, one at a time through the real UI — this is slow. "
@@ -347,6 +362,11 @@ def probe_site(
         with open(output, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
         console.print(f"\n[green]Raw results ({len(results)}) saved to {output}[/green]")
+
+    if report:
+        from piscan.report import generate_html
+        generate_html(results, report, meta={"target": url, "model": "browser"})
+        console.print(f"[green]HTML report written to {report}[/green]")
 
 
 if __name__ == "__main__":

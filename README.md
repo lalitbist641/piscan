@@ -1,5 +1,9 @@
 # PIScanner
 
+![CI](https://github.com/lalitbist641/piscan/actions/workflows/ci.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)
+
 **A command-line tool to test LLM chatbots for prompt-injection vulnerabilities.**
 
 PIScanner fires a library of 61 prompt-injection attacks across five categories at a chatbot, records every response, and grades which attacks actually succeeded using a layered detection cascade — keyword matching, semantic similarity, and an LLM-as-judge for ground truth. It works against local models (via [Ollama](https://ollama.com)) or any real chatbot API through a configurable target profile.
