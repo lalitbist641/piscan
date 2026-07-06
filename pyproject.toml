@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "piscan"
-version = "0.2.0"
+version = "0.3.0"
 description = "Prompt Injection Scanner — a CLI to test LLM chatbots for prompt-injection vulnerabilities"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -55,3 +55,16 @@ piscan = "piscan.cli:app"
 
 [tool.setuptools.packages.find]
 include = ["piscan*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_unused_ignores = false

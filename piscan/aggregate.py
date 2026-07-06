@@ -3,7 +3,7 @@
 from collections import defaultdict
 from typing import Dict, List
 
-ATTACK_CATEGORIES = ["direct", "indirect", "role", "encoding", "extraction", "agentic"]
+ATTACK_CATEGORIES = ["direct", "indirect", "role", "encoding", "extraction", "agentic", "multiturn"]
 
 
 def summarize(results: List[Dict]) -> Dict:

@@ -16,7 +16,8 @@ Runs on **Windows, macOS, and Linux (incl. Kali)** — it's pure Python.
 
 ## Features
 
-- **75 attack payloads** across 6 categories: direct override, indirect/RAG injection, role hijacking, encoding obfuscation, system-prompt extraction, and **agentic** (indirect injection for data exfiltration & tool-hijack, aligned with the OWASP LLM Top 10 and OpenAI Safety Bug Bounty scope) — plus 15 benign controls.
+- **120+ attack payloads** across 7 categories: direct override, indirect/RAG injection, role hijacking, encoding obfuscation, system-prompt extraction, **agentic** (data exfiltration & tool-hijack, aligned with the OWASP LLM Top 10 and OpenAI Safety Bug Bounty scope), and **multi-turn** (injection after rapport-building turns) — plus 15 benign controls.
+- See also: [COMPARISON.md](COMPARISON.md) (vs garak/PyRIT/promptfoo), [RESULTS.md](RESULTS.md), [DATASHEET.md](DATASHEET.md), [SECURITY.md](SECURITY.md).
 - **Compliance-aware detection** that distinguishes a model *complying* with an attack from one *refusing* it (so refusals aren't counted as successful injections).
 - **LLM-as-judge** ground truth using GPT-4o or a **free local model** via Ollama, with precision/recall reporting.
 - **Multi-run averaging** (`--repeat`) and **benign false-positive controls** (`--benign`).

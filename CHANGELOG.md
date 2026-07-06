@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0
+
+Added
+- **Multi-turn attacks**: conversational payloads (`multiturn.json`) where the
+  injection lands after rapport-building turns; the prober keeps conversation
+  state (API mode) or sends turns in sequence (browser mode).
+- **Learned classifier wired as an optional detection layer** — activates
+  automatically when `models/classifier.joblib` exists, degrades gracefully
+  otherwise.
+- **Docs**: `COMPARISON.md` (vs garak / PyRIT / promptfoo), `SECURITY.md`,
+  `DATASHEET.md` (PISecBench dataset card), `RESULTS.md` (results + templates).
+- **Dataset export**: `scripts/export_dataset.py` -> `pisecbench.jsonl` for
+  HuggingFace publishing.
+- **Repo config**: ruff + mypy config, issue/PR templates.
+
 ## 0.2.0
 
 Added

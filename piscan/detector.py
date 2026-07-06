@@ -138,9 +138,22 @@ REFUSAL_PATTERNS = [
 
 
 class Detector:
-    def __init__(self, semantic_threshold: float = 0.55):
+    def __init__(self, semantic_threshold: float = 0.55, use_classifier: bool = True):
         self.threshold = semantic_threshold
         self._encoder = None  # lazy-loaded; keyword+refusal work without it
+        self.use_classifier = use_classifier
+        self._clf = None      # optional trained model (models/classifier.joblib)
+
+    def _classifier(self):
+        if not self.use_classifier:
+            return None
+        if self._clf is None:
+            try:
+                from piscan.classifier import LearnedDetector
+                self._clf = LearnedDetector()
+            except Exception:
+                self._clf = False
+        return self._clf or None
 
     # ---- Layer helpers -------------------------------------------------
 
@@ -227,6 +240,15 @@ class Detector:
                           score=round(similarity, 3),
                           reason=f"semantic_similarity_{similarity:.2f}")
             return result
+
+        # Layer 2.5: learned classifier (only if a trained model is present).
+        clf = self._classifier()
+        if clf is not None and clf.available:
+            pred = clf.predict(response)
+            if pred and pred["detected"] and not self.is_refusal(response):
+                result.update(detected=True, layer="classifier",
+                              score=pred["score"], reason="classifier")
+                return result
 
         result.update(detected=False, layer="none", score=round(similarity, 3),
                       reason="no_detection")

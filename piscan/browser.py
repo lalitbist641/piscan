@@ -197,23 +197,26 @@ class BrowserProber:
                 category = payload.get("category", "direct")
                 reply, ok, err = "", True, None
                 try:
-                    prev_count = self._msg_count(scope)
-                    inp = scope.locator(self.cfg["input_selector"]).first
-                    inp.click(timeout=8000)
-                    inp.fill(payload["text"])
-                    send = self.cfg.get("send_selector")
-                    if send:
-                        scope.locator(send).first.click(timeout=5000)
-                    else:
-                        inp.press("Enter")
-                    # wait for a NEW reply bubble rather than a fixed pause
-                    reply = self._wait_new_reply(page, scope, prev_count, payload["text"])
+                    # single-turn payloads have "text"; multi-turn have "turns"
+                    msgs = payload.get("turns") or [payload.get("text", "")]
+                    for m in msgs:
+                        prev_count = self._msg_count(scope)
+                        inp = scope.locator(self.cfg["input_selector"]).first
+                        inp.click(timeout=8000)
+                        inp.fill(m)
+                        send = self.cfg.get("send_selector")
+                        if send:
+                            scope.locator(send).first.click(timeout=5000)
+                        else:
+                            inp.press("Enter")
+                        # wait for a NEW reply bubble rather than a fixed pause
+                        reply = self._wait_new_reply(page, scope, prev_count, m)
                     if not reply:
                         ok, err = False, "no new reply captured (check selectors/timing)"
                 except Exception as e:
                     ok, err = False, str(e)[:200]
 
-                if category == "benign":
+                if category in ("benign", "multiturn"):
                     det = self.detector.detect_any(reply)
                 else:
                     det = self.detector.detect(reply, category)

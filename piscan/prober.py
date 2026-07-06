@@ -26,9 +26,74 @@ class Prober:
             await asyncio.sleep(0.5)
         return res
 
+    async def _send_conversation(self, client, endpoint, payload, run=0):
+        """Multi-turn attack: send each turn in sequence, keeping conversation
+        history (default Ollama path), and detect on the final reply."""
+        start_time = time.time()
+        category = payload.get("category", "multiturn")
+        turns = payload.get("turns", [])
+        target_url = self.profile.url if self.profile else endpoint
+        model_label = self.profile.name if self.profile else self.model
+        try:
+            messages, reply, response = [], "", None
+            for t in turns:
+                messages.append({"role": "user", "content": t})
+                if self.profile:
+                    body = self.profile.build_body(t)
+                    response = await client.request(
+                        self.profile.method, self.profile.url, json=body,
+                        headers=self.profile.headers, timeout=self.profile.timeout_s)
+                    try:
+                        rj = response.json()
+                    except Exception:
+                        rj = None
+                    reply = self.profile.extract(rj, response.text)
+                    if self.profile.rate_limit_ms:
+                        await asyncio.sleep(self.profile.rate_limit_ms / 1000.0)
+                else:
+                    body = {"model": self.model, "messages": messages, "stream": False}
+                    response = await client.post(endpoint, json=body, timeout=30.0)
+                    try:
+                        reply = response.json().get("message", {}).get("content", response.text)
+                    except Exception:
+                        reply = response.text
+                messages.append({"role": "assistant", "content": reply})
+
+            elapsed_ms = (time.time() - start_time) * 1000
+            detection = self.detector.detect_any(reply)
+            return {
+                "payload_id": payload.get("id", "unknown"),
+                "category": category,
+                "model": model_label,
+                "run": run,
+                "endpoint": target_url,
+                "response_text": (reply or "")[:1000],
+                "status_code": response.status_code if response is not None else 0,
+                "latency_ms": round(elapsed_ms, 2),
+                "success": bool(response is not None and response.status_code < 400),
+                "detected": detection["detected"],
+                "detection_layer": detection["layer"],
+                "detection_score": detection["score"],
+                "detection_reason": detection["reason"],
+                "turns": len(turns),
+                "timestamp": datetime.now().isoformat(),
+            }
+        except Exception as e:
+            return {
+                "payload_id": payload.get("id", "unknown"),
+                "category": category, "model": model_label, "run": run,
+                "endpoint": target_url, "response_text": f"ERROR: {str(e)}",
+                "status_code": 0, "latency_ms": 0, "success": False,
+                "detected": False, "detection_layer": None,
+                "detection_score": 0.0, "detection_reason": f"error: {str(e)}",
+                "timestamp": datetime.now().isoformat(),
+            }
+
     async def send_payload(self, client: httpx.AsyncClient, endpoint: str,
                            payload: Dict, run: int = 0) -> Dict:
         """Send a single payload to an endpoint (one attempt)."""
+        if payload.get("turns"):
+            return await self._send_conversation(client, endpoint, payload, run)
         start_time = time.time()
         category = payload.get("category", "direct")
         target_url = self.profile.url if self.profile else endpoint
@@ -64,8 +129,8 @@ class Prober:
             if self.profile and self.profile.rate_limit_ms:
                 await asyncio.sleep(self.profile.rate_limit_ms / 1000.0)
 
-            # Benign prompts are tested against ALL attack patterns (false-positive check).
-            if category == "benign":
+            # Benign/multiturn prompts are tested against ALL attack patterns.
+            if category in ("benign", "multiturn"):
                 detection = self.detector.detect_any(response_text)
             else:
                 detection = self.detector.detect(response_text, category)
