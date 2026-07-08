@@ -170,3 +170,9 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 [MIT](LICENSE) © 2026 Lalit Bist
+
+## Usage
+
+```bash
+python3 main.py
+```
