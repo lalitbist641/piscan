@@ -279,6 +279,7 @@ def probe_site(
     profile: str = None,
     preset: str = "generic",
     headful: bool = False,
+    slowmo: int = 0,
     benign: bool = False,
     wait_ms: int = 4000,
     limit: int = 0,
@@ -323,7 +324,7 @@ def probe_site(
                   "Watch with --headful if replies aren't captured.[/dim]")
 
     prober = BrowserProber(url=url, profile=prof, preset=preset,
-                           headful=headful, wait_ms=wait_ms)
+                           headful=headful, wait_ms=wait_ms, slowmo=slowmo)
 
     def _tick(r):
         mark = "[red]⚠[/red]" if r["detected"] else ("·" if r["success"] else "[red]✗[/red]")

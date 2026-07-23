@@ -70,8 +70,10 @@ class BrowserProber:
     def __init__(self, url: str, profile: Optional[Dict] = None,
                  preset: str = "generic", headful: bool = False,
                  wait_ms: int = 4000, rate_limit_ms: int = 1500,
-                 open_wait_ms: int = 2500, load_wait_s: int = 15):
+                 open_wait_ms: int = 2500, load_wait_s: int = 15,
+                 slowmo: int = 0):
         self.url = url
+        self.slowmo = slowmo
         # Start from a preset, override with any explicit profile keys.
         cfg = dict(WIDGET_PRESETS.get(preset, WIDGET_PRESETS["generic"]))
         if profile:
@@ -155,8 +157,13 @@ class BrowserProber:
 
         results = []
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=not self.headful)
-            context = browser.new_context()
+            launch_kwargs = {"headless": not self.headful}
+            if self.slowmo:
+                launch_kwargs["slow_mo"] = self.slowmo
+            if self.headful:
+                launch_kwargs["args"] = ["--start-maximized"]
+            browser = p.chromium.launch(**launch_kwargs)
+            context = browser.new_context(no_viewport=True) if self.headful else browser.new_context()
             page = context.new_page()
             page.set_default_timeout(15000)
             page.goto(self.url, wait_until="domcontentloaded")
