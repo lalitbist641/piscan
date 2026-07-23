@@ -1,0 +1,10 @@
+{
+  "name": "shopease-realbot-api",
+  "url": "http://localhost:8080/chat",
+  "method": "POST",
+  "headers": { "Content-Type": "application/json" },
+  "body_template": { "message": "{{PAYLOAD}}" },
+  "response_path": "reply",
+  "rate_limit_ms": 300,
+  "timeout_s": 60
+}

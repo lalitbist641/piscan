@@ -1,0 +1,11 @@
+{
+  "url": "http://localhost:8080",
+  "preset": "generic",
+  "open_selector": "",
+  "iframe_selector": "",
+  "input_selector": "#ci",
+  "send_selector": "#sb",
+  "message_selector": ".msg.bot",
+  "wait_ms": 12000,
+  "rate_limit_ms": 600
+}
