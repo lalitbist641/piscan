@@ -243,8 +243,8 @@ def probe(
         console.print(f"\n[green]Raw results ({len(results)}) saved to {output}[/green]")
 
     if report:
-        from piscan.report import generate_html
-        generate_html(results, report, meta={"target": endpoint, "model": model})
+        from piscan.report import generate_report
+        generate_report(results, report, meta={"target": endpoint, "model": model})
         console.print(f"[green]HTML report written to {report}[/green]")
 
 
@@ -365,8 +365,8 @@ def probe_site(
         console.print(f"\n[green]Raw results ({len(results)}) saved to {output}[/green]")
 
     if report:
-        from piscan.report import generate_html
-        generate_html(results, report, meta={"target": url, "model": "browser"})
+        from piscan.report import generate_report
+        generate_report(results, report, meta={"target": url, "model": "browser"})
         console.print(f"[green]HTML report written to {report}[/green]")
 
 

@@ -130,3 +130,31 @@ def generate_html(results: List[Dict], output_path: str,
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(doc)
     return output_path
+
+
+def generate_report(results, output_path, meta=None):
+    """Generate an HTML report, or a PDF if output_path ends with .pdf.
+
+    PDF uses the (already-installed) Playwright Chromium to render the HTML.
+    Falls back to HTML if Playwright is unavailable.
+    """
+    if not str(output_path).lower().endswith(".pdf"):
+        return generate_html(results, output_path, meta)
+
+    import os
+    html_path = output_path[:-4] + ".html"
+    generate_html(results, html_path, meta)
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page()
+            page.goto("file://" + os.path.abspath(html_path))
+            page.pdf(path=output_path, format="A4", print_background=True,
+                     margin={"top": "12mm", "bottom": "12mm",
+                             "left": "10mm", "right": "10mm"})
+            browser.close()
+        return output_path
+    except Exception:
+        # Playwright missing -> keep the HTML (open it and print to PDF)
+        return html_path
