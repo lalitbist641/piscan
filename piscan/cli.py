@@ -161,8 +161,9 @@ def probe(
     judge: bool = False,
     judge_model: str = "gpt-4o",
     judge_backend: str = "openai",
+    payloads_file: str = None,
 ):
-    """Send all payloads to an endpoint. --profile FILE targets a real chatbot API via a config file; --model sets a local Ollama model; --repeat N averages over N runs; --benign adds false-positive controls; --limit N sends only the first N payloads (quick smoke test); --report FILE writes an HTML findings report; --judge adds ground-truth labels (--judge-backend ollama for a free local judge)."""
+    """Send all payloads to an endpoint. --profile FILE targets a real chatbot API via a config file; --model sets a local Ollama model; --repeat N averages over N runs; --benign adds false-positive controls; --limit N sends only the first N payloads (quick smoke test); --report FILE writes an HTML findings report; --judge adds ground-truth labels (--judge-backend ollama for a free local judge); --payloads-file FILE loads a custom payload set (.jsonl/.json, e.g. the generated 50k dataset) instead of the built-in library."""
     target_profile = None
     if profile:
         from piscan.target import TargetProfile
@@ -179,12 +180,23 @@ def probe(
     console.print(f"[dim]Target: {target_profile.name if target_profile else model}  ·  Concurrent: {concurrent}  ·  Repeat: {repeat}[/dim]")
 
     # Load attack payloads; optionally include benign controls.
-    payloads = [p for p in load_payloads() if p.get("category") != "benign"]
-    n_benign = 0
-    if benign:
-        b = load_payloads("benign")
-        n_benign = len(b)
-        payloads = payloads + b
+    if payloads_file:
+        from piscan.payloads import load_payloads_file
+        allp = load_payloads_file(payloads_file)
+        console.print(f"[bold]Custom payload file:[/bold] {payloads_file}  [dim]({len(allp)} payloads)[/dim]")
+        payloads = [p for p in allp if p.get("category") != "benign"]
+        n_benign = 0
+        if benign:
+            b = [p for p in allp if p.get("category") == "benign"]
+            n_benign = len(b)
+            payloads = payloads + b
+    else:
+        payloads = [p for p in load_payloads() if p.get("category") != "benign"]
+        n_benign = 0
+        if benign:
+            b = load_payloads("benign")
+            n_benign = len(b)
+            payloads = payloads + b
     if limit and limit > 0:
         payloads = payloads[:limit]
         console.print(f"[yellow]--limit {limit}: sending only the first {len(payloads)} payloads (smoke test)[/yellow]")

@@ -1,0 +1,10 @@
+{
+  "name": "Titan Watches API (local)",
+  "url": "http://localhost:3000/chat",
+  "method": "POST",
+  "headers": { "Content-Type": "application/json" },
+  "body_template": { "message": "{{PAYLOAD}}" },
+  "response_path": "reply",
+  "rate_limit_ms": 0,
+  "timeout_s": 60
+}

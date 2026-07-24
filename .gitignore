@@ -23,6 +23,12 @@ slide-*.jpg
 fix-*.jpg
 s2-*.jpg
 
+# Large regenerable dataset artifacts (recreate with: python -m piscan.generator)
+datasets/piscan_50k.jsonl
+datasets/piscan_50k_payloads.xlsx
+datasets/piscan_50k_split/
+datasets/original_payloads_backup/
+
 # OS files
 .DS_Store
 Thumbs.db

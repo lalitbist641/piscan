@@ -20,6 +20,26 @@ def load_payloads(category: str = None) -> List[Dict]:
     
     return all_payloads
 
+def load_payloads_file(path) -> List[Dict]:
+    """Load payloads from a custom file: a .jsonl (one payload per line) or a
+    .json array. Used for large generated datasets (e.g. piscan_50k.jsonl)."""
+    p = Path(path)
+    items = []
+    text = p.read_text(encoding="utf-8")
+    if p.suffix.lower() == ".jsonl":
+        for line in text.splitlines():
+            line = line.strip()
+            if line:
+                items.append(json.loads(line))
+    else:
+        data = json.loads(text)
+        items = data if isinstance(data, list) else data.get("payloads", [])
+    for i, item in enumerate(items):
+        item.setdefault("source", p.stem)
+        item.setdefault("id", f"{p.stem}-{i}")
+    return items
+
+
 def count_payloads(category: str = None) -> int:
     return len(load_payloads(category))
 
